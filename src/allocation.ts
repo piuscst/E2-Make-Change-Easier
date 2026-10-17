@@ -31,9 +31,20 @@ function calculateShift(supplyWorkers: number): theShift {
   };
 }
 
-function drawCrewTiles() {
+interface ReportRow {
+  label: string;
+  color: string;
+  valueOf: (shift: theShift) => number;
+}
+
+const REPORT_ROWS: readonly ReportRow[] = [
+  { label: "Production", color: "#27766b", valueOf: (s) => s.production },
+  { label: "Consumption", color: "#a44d23", valueOf: (s) => s.consumption },
+];
+
+function drawCrewTiles(shift: theShift) {
   for (let i = 0; i < crewSize; i++) {
-    const onSupplies = i < supplyWorkers;
+    const onSupplies = i < shift.supplyWorkers;
     ctx.fillStyle = onSupplies ? "#27766b" : "#c9d2c9";
     ctx.fillRect(18 + i * 45, 16, 36, 36);
     ctx.fillStyle = onSupplies ? "#ffffff" : "#233e43";
@@ -42,9 +53,18 @@ function drawCrewTiles() {
   }
 }
 
+function drawReportRow(row: ReportRow, index: number, shift: theShift) {
+  const value = row.valueOf(shift);
+  const labelY = 102 + index * 52;
+  ctx.fillStyle = "#233e43";
+  ctx.fillText(`${row.label}: ${value}`, 18, labelY);
+  ctx.fillStyle = row.color;
+  ctx.fillRect(18, labelY + 8, value * 14, 20);
+}
+
 function writeReadout(shift: theShift) {
   readout.textContent =
-    `Assigned: ${shift.supplyWorkers}/6 · Production: ${shift.production} · Consumption: ${shift.consumption} · Balance: ${
+    `Assigned: ${shift.supplyWorkers}/${crewSize} · Production: ${shift.production} · Consumption: ${shift.consumption} · Balance: ${
       shift.balance > 0 ? "+" : ""
     }${shift.balance}`;
 }
@@ -52,17 +72,11 @@ function writeReadout(shift: theShift) {
 function render() {
   const shift = calculateShift(supplyWorkers);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawCrewTiles();
+  drawCrewTiles(shift);
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
-  ctx.fillText(`Producers: ${supplyWorkers} / 6`, 18, 76);
-  ctx.fillText(`Production: ${shift.production}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, shift.production * 14, 20);
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${shift.consumption}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, shift.consumption * 14, 20);
+  ctx.fillText(`Producers: ${shift.supplyWorkers} / ${crewSize}`, 18, 76);
+  REPORT_ROWS.forEach((row, index) => drawReportRow(row, index, shift));
   writeReadout(shift);
 }
 
@@ -79,4 +93,5 @@ document.querySelector<HTMLButtonElement>("#allocation-reset")!.onclick =
     supplyWorkers = defaultSupplyWorkers;
     render();
   };
+
 render();
