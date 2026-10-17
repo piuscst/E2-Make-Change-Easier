@@ -12,6 +12,25 @@ const defaultSupplyWorkers = 2;
 
 let supplyWorkers = defaultSupplyWorkers;
 
+interface theShift {
+  supplyWorkers: number;
+  production: number;
+  consumption: number;
+  balance: number;
+}
+
+function calculateShift(supplyWorkers: number): theShift {
+  const production = supplyWorkers * suppliesPerSupplyWorker;
+  const consumption = crewSize;
+
+  return {
+    supplyWorkers,
+    production,
+    consumption,
+    balance: production - consumption,
+  };
+}
+
 function drawCrewTiles() {
   for (let i = 0; i < crewSize; i++) {
     const onSupplies = i < supplyWorkers;
@@ -23,34 +42,28 @@ function drawCrewTiles() {
   }
 }
 
-function writeReadout(
-  production: number,
-  consumption: number,
-  balance: number,
-) {
+function writeReadout(shift: theShift) {
   readout.textContent =
-    `Assigned: ${supplyWorkers}/6 · Production: ${production} · Consumption: ${consumption} · Balance: ${
-      balance > 0 ? "+" : ""
-    }${balance}`;
+    `Assigned: ${shift.supplyWorkers}/6 · Production: ${shift.production} · Consumption: ${shift.consumption} · Balance: ${
+      shift.balance > 0 ? "+" : ""
+    }${shift.balance}`;
 }
 
 function render() {
-  const production = supplyWorkers * suppliesPerSupplyWorker;
-  const consumption = crewSize;
-  const balance = production - consumption;
+  const shift = calculateShift(supplyWorkers);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawCrewTiles();
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
   ctx.fillText(`Producers: ${supplyWorkers} / 6`, 18, 76);
-  ctx.fillText(`Production: ${production}`, 18, 102);
+  ctx.fillText(`Production: ${shift.production}`, 18, 102);
   ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, production * 14, 20);
+  ctx.fillRect(18, 110, shift.production * 14, 20);
   ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${consumption}`, 18, 154);
+  ctx.fillText(`Consumption: ${shift.consumption}`, 18, 154);
   ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, consumption * 14, 20);
-  writeReadout(production, consumption, balance);
+  ctx.fillRect(18, 162, shift.consumption * 14, 20);
+  writeReadout(shift);
 }
 
 document.querySelector<HTMLButtonElement>("#allocation-less")!.onclick = () => {
