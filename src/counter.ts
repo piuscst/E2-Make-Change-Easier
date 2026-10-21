@@ -13,7 +13,11 @@ const diagnostic = document.querySelector<HTMLParagraphElement>(
 let count = 0;
 const capacity = 10;
 let panel: HTMLParagraphElement | null = null;
-let panelUpdates = 0;
+let deliveries = 0;
+
+// Announce changes vars
+const SHIELD_CHANGED = "shield-changed";
+const shieldEvents = new EventTarget();
 
 interface ShieldSnapshot {
   charge: number;
@@ -37,25 +41,31 @@ function drawMeter(shield: ShieldSnapshot) {
   readout.textContent = `Shield charge: ${shield.charge} / ${shield.capacity}`;
 }
 
-function updateStats(shield: ShieldSnapshot) {
-  panelUpdates++;
-  diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
-  renderStats(shield);
+// function updateStats(shield: ShieldSnapshot) {
+//   panelUpdates++;
+//   diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
+//   renderStats(shield);
+// }
+
+function onInspectorShieldChanged(event: Event) {
+  deliveries++;
+  diagnostic.textContent = `Inspector deliveries: ${deliveries}`;
+  if (panel) {
+    renderStats(panel, (event as CustomEvent<ShieldSnapshot>).detail);
+  }
 }
 
-function renderStats(shield: ShieldSnapshot) {
-  if (!panel) return;
-  panel.textContent =
-    `Shield charge: ${shield.charge} · Missing charge: ${shield.missing}`;
+function renderStats(element: HTMLParagraphElement, shield: ShieldSnapshot) {
+   element.textContent = `Shield charge: ${shield.charge} · Missing charge: ${shield.missing}`;
 }
 
 function setCount(next: number) {
   const bounded = Math.max(0, Math.min(10, next));
   if (bounded === count) return;
   count = bounded;
-  const shield = getShieldSnapshot();
-  drawMeter(shield);
-  if (panel) updateStats(shield);
+  shieldEvents.dispatchEvent(
+    new CustomEvent<ShieldSnapshot>(SHIELD_CHANGED, { detail: getShieldSnapshot()}),
+  );
 }
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
@@ -71,11 +81,17 @@ document.querySelector<HTMLButtonElement>("#counter-open")!.onclick = () => {
   if (panel) return;
   panel = document.createElement("p");
   host.append(panel);
-  renderStats(getShieldSnapshot());
+  renderStats(panel, getShieldSnapshot());
+  shieldEvents.addEventListener(SHIELD_CHANGED, onInspectorShieldChanged);
 };
 document.querySelector<HTMLButtonElement>("#counter-close")!.onclick = () => {
   if (!panel) return;
+  shieldEvents.removeEventListener(SHIELD_CHANGED, onInspectorShieldChanged);
   panel.remove();
   panel = null;
 };
+
+shieldEvents.addEventListener(SHIELD_CHANGED, (event) => {
+  drawMeter((event as CustomEvent<ShieldSnapshot>).detail);
+});
 drawMeter(getShieldSnapshot());
