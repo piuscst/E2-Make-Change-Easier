@@ -56,7 +56,8 @@ function onInspectorShieldChanged(event: Event) {
 }
 
 function renderStats(element: HTMLParagraphElement, shield: ShieldSnapshot) {
-   element.textContent = `Shield charge: ${shield.charge} · Missing charge: ${shield.missing}`;
+  element.textContent =
+    `Shield charge: ${shield.charge} · Missing charge: ${shield.missing}`;
 }
 
 function setCount(next: number) {
@@ -64,7 +65,9 @@ function setCount(next: number) {
   if (bounded === count) return;
   count = bounded;
   shieldEvents.dispatchEvent(
-    new CustomEvent<ShieldSnapshot>(SHIELD_CHANGED, { detail: getShieldSnapshot()}),
+    new CustomEvent<ShieldSnapshot>(SHIELD_CHANGED, {
+      detail: getShieldSnapshot(),
+    }),
   );
 }
 
